@@ -287,6 +287,61 @@
       margin: 0 0 32px;
     }
 
+    /* Action buttons container */
+    .action-buttons {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Admin button */
+    .btn-admin {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 32px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(108, 99, 255, 0.35);
+      text-decoration: none;
+    }
+
+    .btn-admin::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .btn-admin:hover::before { opacity: 1; }
+
+    .btn-admin:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(108, 99, 255, 0.45);
+    }
+
+    .btn-admin:active { transform: translateY(0); }
+
+    .btn-admin svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
     /* Logout button */
     .btn-logout {
       display: inline-flex;
@@ -469,12 +524,20 @@
 
           <div class="divider"></div>
 
-          <button class="btn-logout" id="logout-btn" aria-label="Выйти из аккаунта">
-            <svg viewBox="0 0 24 24">
-              <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
-            </svg>
-            Выйти
-          </button>
+          <div class="action-buttons">
+            <a href="admin.html" class="btn-admin" id="admin-btn" aria-label="Перейти в админ-панель">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm3.5 12.09l-1.41 1.41L12 12.41 9.91 14.5 8.5 13.09 10.59 11 8.5 8.91 9.91 7.5 12 9.59l2.09-2.09 1.41 1.41L13.41 11l2.09 2.09z"/>
+              </svg>
+              Админ-панель
+            </a>
+            <button class="btn-logout" id="logout-btn" aria-label="Выйти из аккаунта">
+              <svg viewBox="0 0 24 24">
+                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+              </svg>
+              Выйти
+            </button>
+          </div>
         </div>
 
         <!-- Info cards -->
