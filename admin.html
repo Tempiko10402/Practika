@@ -22,6 +22,10 @@
         <div class="header-title">Админ<span> Панель</span></div>
       </div>
       <div class="header-right">
+        <button class="btn-home" id="btn-home" title="На главную">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          На главную
+        </button>
         <button class="btn-logout" id="btn-logout" title="Выйти">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
           Выйти
@@ -93,6 +97,7 @@
                 <th>Должность</th>
                 <th>Роли</th>
                 <th>Статус</th>
+                <th>Действия</th>
               </tr>
             </thead>
             <tbody id="users-tbody">
@@ -108,7 +113,7 @@
     </main>
   </div>
 
-  <!-- Create User Modal -->
+  <!-- ═══ Create User Modal ═══ -->
   <div class="modal-overlay" id="modal-create">
     <div class="modal">
       <div class="modal-header">
@@ -164,6 +169,131 @@
         <button class="btn-submit" id="btn-submit-user">
           <span class="btn-spinner" id="create-spinner"></span>
           Создать
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ View User Modal ═══ -->
+  <div class="modal-overlay" id="modal-view">
+    <div class="modal modal-view-content">
+      <div class="modal-header">
+        <h2>Профиль пользователя</h2>
+        <button class="modal-close" id="modal-view-close-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="view-profile">
+          <div class="view-avatar-wrap">
+            <div class="view-avatar" id="view-avatar">??</div>
+          </div>
+          <div class="view-name" id="view-fullname">—</div>
+          <div class="view-fields">
+            <div class="view-field">
+              <span class="view-field-label">Email</span>
+              <span class="view-field-value" id="view-email">—</span>
+            </div>
+            <div class="view-field">
+              <span class="view-field-label">Должность</span>
+              <span class="view-field-value" id="view-position">—</span>
+            </div>
+            <div class="view-field">
+              <span class="view-field-label">Статус</span>
+              <span class="view-field-value" id="view-status">—</span>
+            </div>
+            <div class="view-field">
+              <span class="view-field-label">Роли</span>
+              <span class="view-field-value roles-wrap" id="view-roles">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-submit" onclick="closeViewModal()">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Edit User Modal ═══ -->
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Редактировать пользователя</h2>
+        <button class="modal-close" id="modal-edit-close-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-user-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="eu-lastName">Фамилия *</label>
+              <input class="form-input" id="eu-lastName" required />
+              <span class="field-error" id="eu-err-lastName"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="eu-firstName">Имя *</label>
+              <input class="form-input" id="eu-firstName" required />
+              <span class="field-error" id="eu-err-firstName"></span>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="eu-middleName">Отчество</label>
+              <input class="form-input" id="eu-middleName" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="eu-position">Должность</label>
+              <input class="form-input" id="eu-position" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="eu-email">Email *</label>
+            <input class="form-input" id="eu-email" type="email" required />
+            <span class="field-error" id="eu-err-email"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Роли</label>
+            <div class="checkbox-group" id="edit-roles-checkboxes">
+              <span style="color:var(--text-dim);font-size:13px">Загрузка...</span>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="modal-edit-cancel-btn">Отмена</button>
+        <button class="btn-submit" id="btn-edit-submit">
+          <span class="btn-spinner" id="edit-spinner"></span>
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Delete Confirm Modal ═══ -->
+  <div class="modal-overlay" id="modal-delete">
+    <div class="modal modal-delete-content">
+      <div class="modal-header">
+        <h2>Удалить пользователя</h2>
+        <button class="modal-close" id="modal-delete-close-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="delete-confirm-body">
+          <div class="delete-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </div>
+          <p class="delete-confirm-text">Вы уверены, что хотите удалить пользователя<br><strong id="delete-user-name"></strong>?</p>
+          <p class="delete-confirm-sub">Это действие необратимо.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btn-delete-cancel">Отмена</button>
+        <button class="btn-danger-submit" id="btn-delete-confirm">
+          <span class="btn-spinner" id="delete-spinner"></span>
+          Удалить
         </button>
       </div>
     </div>

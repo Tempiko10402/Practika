@@ -8,6 +8,8 @@ let currentPage = 1;
 let totalUsers = 0;
 let searchQuery = '';
 let rolesCache = [];
+let editingUser = null;
+let deletingUser = null;
 
 // ─── Auth Guard ───────────────────────────────────────────────────────────
 (function authGuard() {
@@ -43,6 +45,7 @@ function showSkeleton() {
       <td><div class="skeleton w-50" style="width:90px"></div></td>
       <td><div class="skeleton w-30" style="width:70px"></div></td>
       <td><div class="skeleton w-30" style="width:60px"></div></td>
+      <td><div class="skeleton w-30" style="width:80px"></div></td>
     </tr>`;
   }
   tbody.innerHTML = html;
@@ -74,7 +77,7 @@ async function loadUsers() {
     console.error('Ошибка загрузки пользователей:', err);
     showToast('Не удалось загрузить пользователей', 'error');
     document.getElementById('users-tbody').innerHTML = `
-      <tr><td colspan="4">
+      <tr><td colspan="5">
         <div class="empty-state">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           <h3>Ошибка загрузки</h3>
@@ -116,7 +119,7 @@ function renderUsers(data) {
 
   if (users.length === 0) {
     tbody.innerHTML = `
-      <tr><td colspan="4">
+      <tr><td colspan="5">
         <div class="empty-state">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
           <h3>Нет пользователей</h3>
@@ -135,6 +138,7 @@ function renderUsers(data) {
     const email = u.email || '—';
     const position = u.position || '—';
     const isLocked = u.isLockoutEnabled || u.lockoutEnabled || false;
+    const userId = u.id || u.Id || u.userId || '';
 
     let rolesHtml = '';
     const roles = u.roles || u.userRoles || [];
@@ -147,6 +151,9 @@ function renderUsers(data) {
     } else {
       rolesHtml = '<span style="color:var(--text-dim);font-size:12px">—</span>';
     }
+
+    // Сохраняем данные пользователя в data-атрибуте для быстрого доступа
+    const userDataAttr = encodeURIComponent(JSON.stringify(u));
 
     html += `<tr>
       <td>
@@ -161,6 +168,25 @@ function renderUsers(data) {
       <td>${position}</td>
       <td>${rolesHtml}</td>
       <td><span class="status-dot ${isLocked ? 'locked' : 'active'}">${isLocked ? 'Заблокирован' : 'Активен'}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="action-btn view" title="Просмотр" onclick='openViewModal(${JSON.stringify(u)})'>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+          </button>
+          <button class="action-btn edit" title="Редактировать" onclick='openEditModal(${JSON.stringify(u)})'>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+          <button class="action-btn ${isLocked ? 'unlock' : 'lock'}" title="${isLocked ? 'Разблокировать' : 'Заблокировать'}" onclick="toggleLockout('${userId}', ${isLocked})">
+            <svg viewBox="0 0 24 24" fill="currentColor">${isLocked
+              ? '<path d="M12 1C8.676 1 6 3.676 6 7v1H4v15h16V8h-2V7c0-3.324-2.676-6-6-6zm0 2c2.276 0 4 1.724 4 4v1H8V7c0-2.276 1.724-4 4-4zm0 9c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/>'
+              : '<path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h2c0-1.66 1.34-3 3-3s3 1.34 3 3v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>'}
+            </svg>
+          </button>
+          <button class="action-btn delete" title="Удалить" onclick="openDeleteConfirm('${userId}', '${fullName.replace(/'/g, "\\'")}')">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
+      </td>
     </tr>`;
   });
 
@@ -207,7 +233,7 @@ async function loadRoles() {
     const data = await res.json();
     rolesCache = Array.isArray(data) ? data : (data.items || data.data || []);
     document.getElementById('stat-roles').textContent = rolesCache.length;
-    renderRoleCheckboxes();
+    renderRoleCheckboxes('roles-checkboxes');
   } catch (err) {
     console.error('Ошибка загрузки ролей:', err);
     document.getElementById('roles-checkboxes').innerHTML =
@@ -215,8 +241,8 @@ async function loadRoles() {
   }
 }
 
-function renderRoleCheckboxes() {
-  const container = document.getElementById('roles-checkboxes');
+function renderRoleCheckboxes(containerId, selectedRoleIds = []) {
+  const container = document.getElementById(containerId);
   if (rolesCache.length === 0) {
     container.innerHTML = '<span style="color:var(--text-dim);font-size:13px">Нет доступных ролей</span>';
     return;
@@ -224,33 +250,59 @@ function renderRoleCheckboxes() {
   container.innerHTML = rolesCache.map(r => {
     const id = r.id || r.Id || r.roleId;
     const name = r.name || r.Name || r.roleName || id;
-    return `<label class="checkbox-pill" data-role-id="${id}">
-      <input type="checkbox" value="${id}" />
+    const isChecked = selectedRoleIds.includes(id) || selectedRoleIds.includes(String(id));
+    return `<label class="checkbox-pill ${isChecked ? 'checked' : ''}" data-role-id="${id}">
+      <input type="checkbox" value="${id}" ${isChecked ? 'checked' : ''} />
       ${name}
     </label>`;
   }).join('');
 
   container.querySelectorAll('.checkbox-pill').forEach(pill => {
-    pill.addEventListener('click', (e) => {
-      if (e.target.tagName === 'INPUT') return;
-      const cb = pill.querySelector('input');
-      cb.checked = !cb.checked;
+    const cb = pill.querySelector('input');
+    cb.addEventListener('change', () => {
       pill.classList.toggle('checked', cb.checked);
     });
-    pill.querySelector('input').addEventListener('change', (e) => {
-      pill.classList.toggle('checked', e.target.checked);
-    });
   });
+}
+
+// ─── View User Modal ──────────────────────────────────────────────────────
+function openViewModal(user) {
+  const fullName = [user.lastName, user.firstName, user.middleName].filter(Boolean).join(' ') || 'Без имени';
+  const initials = ((user.firstName?.[0] || '') + (user.lastName?.[0] || '')).toUpperCase() || '?';
+  const isLocked = user.isLockoutEnabled || user.lockoutEnabled || false;
+
+  const roles = user.roles || user.userRoles || [];
+  let rolesHtml = '';
+  if (Array.isArray(roles) && roles.length > 0) {
+    roles.forEach(r => {
+      const roleName = typeof r === 'string' ? r : (r.name || r.roleName || '');
+      const isAdmin = roleName.toLowerCase().includes('admin');
+      rolesHtml += `<span class="role-badge ${isAdmin ? 'admin' : ''}">${roleName}</span>`;
+    });
+  } else {
+    rolesHtml = '<span style="color:var(--text-dim)">Без ролей</span>';
+  }
+
+  document.getElementById('view-avatar').textContent = initials;
+  document.getElementById('view-fullname').textContent = fullName;
+  document.getElementById('view-email').textContent = user.email || '—';
+  document.getElementById('view-position').textContent = user.position || '—';
+  document.getElementById('view-roles').innerHTML = rolesHtml;
+  document.getElementById('view-status').innerHTML = `<span class="status-dot ${isLocked ? 'locked' : 'active'}">${isLocked ? 'Заблокирован' : 'Активен'}</span>`;
+
+  document.getElementById('modal-view').classList.add('visible');
+}
+
+function closeViewModal() {
+  document.getElementById('modal-view').classList.remove('visible');
 }
 
 // ─── Create User Modal ────────────────────────────────────────────────────
 function openModal() {
   document.getElementById('modal-create').classList.add('visible');
   document.getElementById('create-user-form').reset();
-  document.querySelectorAll('.checkbox-pill').forEach(p => p.classList.remove('checked'));
-  document.querySelectorAll('.checkbox-pill input').forEach(cb => cb.checked = false);
   clearAllFieldErrors();
-  renderRoleCheckboxes();
+  renderRoleCheckboxes('roles-checkboxes');
 }
 
 function closeModal() {
@@ -338,6 +390,203 @@ async function submitCreateUser() {
   }
 }
 
+// ─── Edit User Modal ──────────────────────────────────────────────────────
+function openEditModal(user) {
+  editingUser = user;
+
+  document.getElementById('eu-lastName').value = user.lastName || '';
+  document.getElementById('eu-firstName').value = user.firstName || '';
+  document.getElementById('eu-middleName').value = user.middleName || '';
+  document.getElementById('eu-position').value = user.position || '';
+  document.getElementById('eu-email').value = user.email || '';
+
+  // Определяем роли пользователя
+  const userRoles = user.roles || user.userRoles || [];
+  const selectedRoleIds = userRoles.map(r => {
+    if (typeof r === 'string') return r;
+    return r.id || r.Id || r.roleId || r.name || '';
+  });
+
+  clearEditFieldErrors();
+  renderRoleCheckboxes('edit-roles-checkboxes', selectedRoleIds);
+
+  document.getElementById('modal-edit').classList.add('visible');
+}
+
+function closeEditModal() {
+  document.getElementById('modal-edit').classList.remove('visible');
+  editingUser = null;
+}
+
+function clearEditFieldErrors() {
+  document.querySelectorAll('#edit-user-form .field-error').forEach(el => {
+    el.classList.remove('visible');
+    el.textContent = '';
+  });
+  document.querySelectorAll('#edit-user-form .form-input').forEach(el => {
+    el.classList.remove('invalid');
+  });
+}
+
+function showEditFieldErr(fieldId, errId, msg) {
+  document.getElementById(fieldId).classList.add('invalid');
+  const el = document.getElementById(errId);
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+async function submitEditUser() {
+  if (!editingUser) return;
+  clearEditFieldErrors();
+
+  const lastName = document.getElementById('eu-lastName').value.trim();
+  const firstName = document.getElementById('eu-firstName').value.trim();
+  const middleName = document.getElementById('eu-middleName').value.trim();
+  const position = document.getElementById('eu-position').value.trim();
+  const email = document.getElementById('eu-email').value.trim();
+
+  let hasErr = false;
+  if (!lastName) { showEditFieldErr('eu-lastName', 'eu-err-lastName', 'Введите фамилию'); hasErr = true; }
+  if (!firstName) { showEditFieldErr('eu-firstName', 'eu-err-firstName', 'Введите имя'); hasErr = true; }
+  if (!email) { showEditFieldErr('eu-email', 'eu-err-email', 'Введите email'); hasErr = true; }
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showEditFieldErr('eu-email', 'eu-err-email', 'Некорректный email'); hasErr = true; }
+
+  if (hasErr) return;
+
+  const selectedRoles = [];
+  document.querySelectorAll('#edit-roles-checkboxes input:checked').forEach(cb => {
+    selectedRoles.push(cb.value);
+  });
+
+  const userId = editingUser.id || editingUser.Id || editingUser.userId || '';
+
+  const btn = document.getElementById('btn-edit-submit');
+  const spinner = document.getElementById('edit-spinner');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/User/UpdateUser`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ id: userId, lastName, firstName, middleName, position, email, idRoles: selectedRoles })
+    });
+
+    if (res.status === 401) {
+      localStorage.removeItem('accessToken');
+      window.location.replace('aut.html');
+      return;
+    }
+
+    if (res.ok) {
+      showToast(`Данные ${firstName} ${lastName} обновлены!`, 'success');
+      closeEditModal();
+      loadUsers();
+    } else {
+      let errMsg = 'Ошибка при обновлении';
+      try {
+        const errData = await res.json();
+        errMsg = errData.message || errData.title || errData.error || JSON.stringify(errData.errors || errData);
+      } catch {}
+      showToast(errMsg, 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Не удалось подключиться к серверу', 'error');
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+}
+
+// ─── Toggle Lockout ───────────────────────────────────────────────────────
+async function toggleLockout(userId, isCurrentlyLocked) {
+  const newState = !isCurrentlyLocked;
+  const actionText = newState ? 'блокировки' : 'разблокировки';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/User/IsLockoutEnabled`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ userId, enabled: newState })
+    });
+
+    if (res.status === 401) {
+      localStorage.removeItem('accessToken');
+      window.location.replace('aut.html');
+      return;
+    }
+
+    if (res.ok) {
+      showToast(newState ? 'Пользователь заблокирован' : 'Пользователь разблокирован', 'success');
+      loadUsers();
+    } else {
+      let errMsg = `Ошибка ${actionText}`;
+      try {
+        const errData = await res.json();
+        errMsg = errData.message || errData.title || errMsg;
+      } catch {}
+      showToast(errMsg, 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast(`Не удалось выполнить ${actionText}`, 'error');
+  }
+}
+
+// ─── Delete User ──────────────────────────────────────────────────────────
+function openDeleteConfirm(userId, fullName) {
+  deletingUser = { id: userId, name: fullName };
+  document.getElementById('delete-user-name').textContent = fullName;
+  document.getElementById('modal-delete').classList.add('visible');
+}
+
+function closeDeleteConfirm() {
+  document.getElementById('modal-delete').classList.remove('visible');
+  deletingUser = null;
+}
+
+async function confirmDelete() {
+  if (!deletingUser) return;
+
+  const btn = document.getElementById('btn-delete-confirm');
+  const spinner = document.getElementById('delete-spinner');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/User/DeleteUser?id=${encodeURIComponent(deletingUser.id)}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+
+    if (res.status === 401) {
+      localStorage.removeItem('accessToken');
+      window.location.replace('aut.html');
+      return;
+    }
+
+    if (res.ok) {
+      showToast(`Пользователь «${deletingUser.name}» удалён`, 'success');
+      closeDeleteConfirm();
+      loadUsers();
+    } else {
+      let errMsg = 'Ошибка при удалении';
+      try {
+        const errData = await res.json();
+        errMsg = errData.message || errData.title || errMsg;
+      } catch {}
+      showToast(errMsg, 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Не удалось удалить пользователя', 'error');
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+}
+
 // ─── Search debounce ──────────────────────────────────────────────────────
 let searchTimer = null;
 document.getElementById('search-input').addEventListener('input', (e) => {
@@ -346,7 +595,7 @@ document.getElementById('search-input').addEventListener('input', (e) => {
     searchQuery = e.target.value.trim();
     currentPage = 1;
     loadUsers();
-  }, 400);
+  }, 1500);
 });
 
 // ─── Event Listeners ──────────────────────────────────────────────────────
@@ -356,21 +605,50 @@ document.getElementById('modal-cancel-btn').addEventListener('click', closeModal
 document.getElementById('btn-submit-user').addEventListener('click', submitCreateUser);
 document.getElementById('btn-refresh').addEventListener('click', () => loadUsers());
 
-document.getElementById('modal-create').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closeModal();
+// Просмотр
+document.getElementById('modal-view-close-btn').addEventListener('click', closeViewModal);
+
+// Редактирование
+document.getElementById('modal-edit-close-btn').addEventListener('click', closeEditModal);
+document.getElementById('modal-edit-cancel-btn').addEventListener('click', closeEditModal);
+document.getElementById('btn-edit-submit').addEventListener('click', submitEditUser);
+
+// Удаление
+document.getElementById('btn-delete-confirm').addEventListener('click', confirmDelete);
+document.getElementById('btn-delete-cancel').addEventListener('click', closeDeleteConfirm);
+document.getElementById('modal-delete-close-btn').addEventListener('click', closeDeleteConfirm);
+
+// На главную
+document.getElementById('btn-home').addEventListener('click', () => {
+  window.location.href = 'main.html';
 });
 
+// Выход
 document.getElementById('btn-logout').addEventListener('click', () => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   window.location.replace('aut.html');
 });
 
+// Escape
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') {
+    closeModal();
+    closeEditModal();
+    closeViewModal();
+    closeDeleteConfirm();
+  }
 });
 
+// Убираем ошибки валидации при вводе
 document.querySelectorAll('#create-user-form .form-input').forEach(input => {
+  input.addEventListener('input', () => {
+    input.classList.remove('invalid');
+    const errEl = input.parentElement.querySelector('.field-error');
+    if (errEl) { errEl.classList.remove('visible'); errEl.textContent = ''; }
+  });
+});
+document.querySelectorAll('#edit-user-form .form-input').forEach(input => {
   input.addEventListener('input', () => {
     input.classList.remove('invalid');
     const errEl = input.parentElement.querySelector('.field-error');
