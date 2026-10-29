@@ -273,6 +273,42 @@ body {
 .btn-admin:active { transform: translateY(0); }
 .btn-admin svg { width: 18px; height: 18px; fill: currentColor; }
 
+.btn-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 32px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0ea5e9, #14b8a6);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.35);
+  text-decoration: none;
+}
+
+.btn-brand::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.btn-brand:hover::before { opacity: 1; }
+.btn-brand:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(14, 165, 233, 0.45); }
+.btn-brand:active { transform: translateY(0); }
+.btn-brand svg { width: 18px; height: 18px; fill: currentColor; }
+
+
 .btn-logout {
   display: inline-flex;
   align-items: center;
